@@ -1,42 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weather Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="container">
-    <h1>Weather Dashboard</h1>
-    <form id="search-form" class="search-box">
-      <label class="sr-only" for="city-input">City</label>
-      <input id="city-input" name="city" type="search" placeholder="Enter a city" autocomplete="off" required>
-      <button id="fetch-btn" type="submit">Get Weather</button>
-    </form>
+    <main class="weather-app">
+        <h1>Weather Dashboard</h1>
 
-    <p id="loading" class="hidden" role="status">Loading weather…</p>
-    <p id="error" class="error hidden" role="alert"></p>
+        <form id="search-form">
+            <label for="city-input" class="visually-hidden">City</label>
+            <input type="text" id="city-input" placeholder="Enter city name..." required>
+            <button type="submit">Search</button>
+        </form>
 
-    <section id="weather-display" class="weather-card hidden" aria-live="polite">
-      <h2 id="city-name">City Weather</h2>
-      <img id="weather-icon" alt="" width="100" height="100">
-      <p id="description"></p>
-      <p class="temp-display"><span id="temperature">--</span></p>
-      <p id="feels-like"></p>
-      <div class="details-grid">
-        <div class="detail-item"><span class="label">Humidity</span><span id="humidity" class="value">--</span></div>
-        <div class="detail-item"><span class="label">Wind</span><span id="wind" class="value">--</span></div>
-        <div class="detail-item"><span class="label">Pressure</span><span id="pressure" class="value">--</span></div>
-      </div>
-    </section>
+        <div id="loading" class="hidden" role="status">Loading...</div>
 
-    <section class="history" aria-labelledby="history-heading">
-      <h2 id="history-heading">Recent searches</h2>
-      <ul id="search-history"></ul>
-    </section>
-  </main>
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+        <div id="error" class="hidden error" role="alert"></div>
+
+        <section id="weather-display" class="hidden" aria-live="polite">
+            <div class="weather-main">
+                <h2 id="city-name"></h2>
+                <img id="weather-icon" src="" alt="">
+                <p id="temperature"></p>
+                <p id="description"></p>
+            </div>
+
+            <div class="weather-details">
+                <div class="detail">
+                    <span>Feels Like</span>
+                    <span id="feels-like"></span>
+                </div>
+                <div class="detail">
+                    <span>Humidity</span>
+                    <span id="humidity"></span>
+                </div>
+                <div class="detail">
+                    <span>Wind</span>
+                    <span id="wind"></span>
+                </div>
+                <div class="detail">
+                    <span>Pressure</span>
+                    <span id="pressure"></span>
+                </div>
+            </div>
+        </section>
+
+        <section id="recent-searches">
+            <h3>Recent Searches</h3>
+            <ul id="search-history"></ul>
+        </section>
+    </main>
+
+    <script src="config.js"></script>   <!-- defines API_KEY; git-ignored -->
+    <script src="app.js"></script>
 </body>
 </html>

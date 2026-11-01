@@ -111,61 +111,6 @@ async function checkout(userId) {
 // TODO C2: call checkout(1)
 checkout(1);
 
-// DOM Element Targets
-const citySelector = document.getElementById('city-selector');
-const fetchBtn = document.getElementById('fetch-btn');
-const weatherCard = document.getElementById('weather-card');
-const locationName = document.getElementById('location-name');
-const temperatureEl = document.getElementById('temperature');
-const windspeedEl = document.getElementById('windspeed');
-const humidityEl = document.getElementById('humidity');
-const errorMsg = document.getElementById('error-message');
-
-// Async Function to talk to the Weather API
-async function getWeatherData() {
-    // Hide previous states
-    weatherCard.classList.add('hidden');
-    errorMsg.classList.add('hidden');
-
-    // Get selected coordinates and clean up labels
-    const coordinates = citySelector.value;
-    const selectedCityName = citySelector.options[citySelector.selectedIndex].text;
-    const [lat, lon] = coordinates.split(',');
-
-    // Build the Open-Meteo URL string dynamically
-    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m`;
-
-    try {
-        // Fetch data from API
-        const response = await fetch(apiUrl);
-        
-        // Handle unexpected bad server issues
-        if (!response.ok) {
-            throw new Error("Could not retrieve API structural parameters.");
-        }
-
-        const data = await response.json();
-
-        // Bind data fields directly to the DOM interface
-        locationName.textContent = selectedCityName;
-        temperatureEl.textContent = data.current.temperature_2m;
-        windspeedEl.textContent = data.current.wind_speed_10m;
-        humidityEl.textContent = data.current.relative_humidity_2m;
-
-        // Reveal card container
-        weatherCard.classList.remove('hidden');
-
-    } catch (error) {
-        // Show validation failures inside error box
-        errorMsg.textContent = `API Error: ${error.message}`;
-        errorMsg.classList.remove('hidden');
-    }
-}
-
-// Attach Action click listener to button target
-fetchBtn.addEventListener('click', getWeatherData);
-
-
 // ============================================
 // BONUS — Promise.all Parallel execution
 // ============================================
