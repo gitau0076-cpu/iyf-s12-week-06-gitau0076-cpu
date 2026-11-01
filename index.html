@@ -1,46 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather Dashboard</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Weather Checker</h1>
-        
-        <div class="search-box">
-            <!-- Coordinates for popular testing locations -->
-            <select id="city-selector">
-                <option value="-1.2921,36.8219">Nairobi, Kenya</option>
-                <option value="40.7128,-74.0060">New York, USA</option>
-                <option value="51.5074,-0.1278">London, UK</option>
-                <option value="-33.8688,151.2093">Sydney, Australia</option>
-                <option value="35.6762,139.6503">Tokyo, Japan</option>
-            </select>
-            <button id="fetch-btn">Get Weather</button>
-        </div>
+  <main class="container">
+    <h1>Weather Dashboard</h1>
+    <form id="search-form" class="search-box">
+      <label class="sr-only" for="city-input">City</label>
+      <input id="city-input" name="city" type="search" placeholder="Enter a city" autocomplete="off" required>
+      <button id="fetch-btn" type="submit">Get Weather</button>
+    </form>
 
-        <div id="weather-card" class="weather-card hidden">
-            <h2 id="location-name">City Weather</h2>
-            <div class="temp-display">
-                <span id="temperature">--</span>°C
-            </div>
-            <div class="details-grid">
-                <div class="detail-item">
-                    <span class="label">Wind Speed:</span>
-                    <span id="windspeed" class="value">--</span> km/h
-                </div>
-                <div class="detail-item">
-                    <span class="label">Humidity:</span>
-                    <span id="humidity" class="value">--</span> %
-                </div>
-            </div>
-        </div>
-        
-        <div id="error-message" class="error hidden"></div>
-    </div>
-    <script src="asycn-practice.js"></script>
+    <p id="loading" class="hidden" role="status">Loading weather…</p>
+    <p id="error" class="error hidden" role="alert"></p>
+
+    <section id="weather-display" class="weather-card hidden" aria-live="polite">
+      <h2 id="city-name">City Weather</h2>
+      <img id="weather-icon" alt="" width="100" height="100">
+      <p id="description"></p>
+      <p class="temp-display"><span id="temperature">--</span></p>
+      <p id="feels-like"></p>
+      <div class="details-grid">
+        <div class="detail-item"><span class="label">Humidity</span><span id="humidity" class="value">--</span></div>
+        <div class="detail-item"><span class="label">Wind</span><span id="wind" class="value">--</span></div>
+        <div class="detail-item"><span class="label">Pressure</span><span id="pressure" class="value">--</span></div>
+      </div>
+    </section>
+
+    <section class="history" aria-labelledby="history-heading">
+      <h2 id="history-heading">Recent searches</h2>
+      <ul id="search-history"></ul>
+    </section>
+  </main>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
