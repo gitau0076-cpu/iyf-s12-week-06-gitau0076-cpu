@@ -1,0 +1,27 @@
+function randomDelay() {
+    return Math.floor(Math.random() * 2000) + 500;
+}
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function runTask(taskName) {
+    const waitTime = randomDelay();
+    await delay(waitTime);
+    console.log(`${taskName} finished after ${waitTime} ms`);
+}
+
+async function runTasks() {
+    console.time("Total execution time");
+
+    try {
+        await runTask("First task");
+        await runTask("Second task");
+        await runTask("Third task");
+    } finally {
+        console.timeEnd("Total execution time");
+    }
+}
+
+runTasks();
