@@ -1,5 +1,8 @@
 // API_KEY is supplied by config.js (kept out of version control).
 const API_ROOT = "https://api.openweathermap.org/data/2.5";
+let units = "metric";
+let currentQuery = null;
+let activeWeatherRequest = 0;
 
 const form = document.getElementById("search-form");
 const cityInput = document.getElementById("city-input");
@@ -22,7 +25,7 @@ async function request(endpoint, params) {
         throw new Error("Add your OpenWeather API key to config.js.");
     }
 
-    const query = new URLSearchParams({ ...params, appid: API_KEY, units: "metric" });
+    const query = new URLSearchParams({ ...params, appid: API_KEY, units });
     const response = await fetch(`${API_ROOT}/${endpoint}?${query}`);
     const data = await response.json().catch(() => ({}));
 
@@ -35,22 +38,27 @@ async function request(endpoint, params) {
     return data;
 }
 
-async function getWeather(city) {
+async function getWeather(cityOrParams) {
+    const params = typeof cityOrParams === "string" ? { q: cityOrParams } : cityOrParams;
+    const requestId = ++activeWeatherRequest;
+    currentQuery = params;
     loading.classList.remove("hidden");
     error.classList.add("hidden");
     weatherDisplay.classList.add("hidden");
     forecastDisplay.classList.add("hidden");
 
     try {
-        const params = { q: city };
         const data = await request("weather", params);
+        if (requestId !== activeWeatherRequest) return;
         displayWeather(data);
         saveToHistory(data.name);
 
         try {
             const forecastData = await request("forecast", params);
+            if (requestId !== activeWeatherRequest) return;
             displayForecast(forecastData);
         } catch (forecastError) {
+            if (requestId !== activeWeatherRequest) return;
             const reason = forecastError instanceof TypeError
                 ? "Network error. Check your connection and try again."
                 : forecastError.message;
@@ -61,12 +69,13 @@ async function getWeather(city) {
             forecastDisplay.classList.remove("hidden");
         }
     } catch (requestError) {
+        if (requestId !== activeWeatherRequest) return;
         error.textContent = requestError instanceof TypeError
             ? "Network error. Check your connection and try again."
             : requestError.message;
         error.classList.remove("hidden");
     } finally {
-        loading.classList.add("hidden");
+        if (requestId === activeWeatherRequest) loading.classList.add("hidden");
     }
 }
 
@@ -75,11 +84,11 @@ function displayWeather(data) {
     cityName.textContent = `${data.name}, ${data.sys.country}`;
     weatherIcon.src = `https://openweathermap.org/img/wn/${condition.icon}@2x.png`;
     weatherIcon.alt = condition.description;
-    temperature.textContent = `${Math.round(data.main.temp)}°C`;
+    temperature.textContent = formatTemperature(data.main.temp);
     description.textContent = condition.description;
-    feelsLike.textContent = `${Math.round(data.main.feels_like)}°C`;
+    feelsLike.textContent = formatTemperature(data.main.feels_like);
     humidity.textContent = `${data.main.humidity}%`;
-    wind.textContent = `${data.wind.speed} m/s`;
+    wind.textContent = `${data.wind.speed} ${units === "metric" ? "m/s" : "mph"}`;
     pressure.textContent = `${data.main.pressure} hPa`;
     document.body.dataset.weather = condition.main.toLowerCase();
     weatherDisplay.classList.remove("hidden");
@@ -129,7 +138,7 @@ function displayForecast(data) {
         icon.alt = condition.description;
 
         const temp = document.createElement("span");
-        temp.textContent = `${Math.round(day.main.temp)}°C`;
+        temp.textContent = formatTemperature(day.main.temp);
 
         const summary = document.createElement("small");
         summary.textContent = condition.description;
@@ -139,6 +148,10 @@ function displayForecast(data) {
     }
 
     forecastDisplay.classList.remove("hidden");
+}
+
+function formatTemperature(value) {
+    return `${Math.round(value)}\u00b0${units === "metric" ? "C" : "F"}`;
 }
 
 function saveToHistory(city) {
@@ -181,4 +194,135 @@ form.addEventListener("submit", event => {
     if (city) getWeather(city);
 });
 
+document.getElementById("unit-toggle").addEventListener("click", event => {
+    units = units === "metric" ? "imperial" : "metric";
+    event.currentTarget.textContent = units === "metric" ? "Switch to \u00b0F" : "Switch to \u00b0C";
+    if (currentQuery) getWeather(currentQuery);
+});
+
+document.getElementById("location-button").addEventListener("click", () => {
+    if (!navigator.geolocation) {
+        error.textContent = "Geolocation is not supported by this browser.";
+        error.classList.remove("hidden");
+        return;
+    }
+
+    loading.classList.remove("hidden");
+    error.classList.add("hidden");
+    navigator.geolocation.getCurrentPosition(
+        position => {
+            const { latitude, longitude } = position.coords;
+            getWeather({ lat: latitude, lon: longitude });
+        },
+        () => {
+            loading.classList.add("hidden");
+            error.textContent = "Could not get your location. Check browser location permissions.";
+            error.classList.remove("hidden");
+        }
+    );
+});
+
 loadHistory();
+
+// Posts API: fetch and display records, filter them, and submit a new record.
+const POSTS_URL = "https://jsonplaceholder.typicode.com/posts";
+const postSearch = document.getElementById("post-search");
+const postForm = document.getElementById("post-form");
+const postTitle = document.getElementById("post-title");
+const postBody = document.getElementById("post-body");
+const postSubmit = document.getElementById("post-submit");
+const postsLoading = document.getElementById("posts-loading");
+const postsError = document.getElementById("posts-error");
+const postStatus = document.getElementById("post-status");
+const postsList = document.getElementById("posts-list");
+let posts = [];
+
+async function fetchPosts() {
+    postsLoading.classList.remove("hidden");
+    postsError.classList.add("hidden");
+
+    try {
+        const response = await fetch(`${POSTS_URL}?_limit=20`);
+        if (!response.ok) throw new Error(`Could not load posts (HTTP ${response.status}).`);
+        posts = await response.json();
+        renderPosts();
+    } catch (error) {
+        postsError.textContent = error instanceof TypeError
+            ? "Network error while loading posts. Check your connection."
+            : error.message;
+        postsError.classList.remove("hidden");
+    } finally {
+        postsLoading.classList.add("hidden");
+    }
+}
+
+function renderPosts() {
+    const term = postSearch.value.trim().toLowerCase();
+    const matchingPosts = posts.filter(post =>
+        `${post.title} ${post.body}`.toLowerCase().includes(term)
+    );
+
+    postsList.replaceChildren();
+    if (matchingPosts.length === 0) {
+        const emptyMessage = document.createElement("p");
+        emptyMessage.textContent = term ? "No posts match your search." : "No posts to display.";
+        postsList.append(emptyMessage);
+        return;
+    }
+
+    for (const post of matchingPosts) {
+        const article = document.createElement("article");
+        article.className = "post-card";
+
+        const title = document.createElement("h3");
+        title.textContent = post.title;
+
+        const body = document.createElement("p");
+        body.textContent = post.body;
+
+        article.append(title, body);
+        postsList.append(article);
+    }
+}
+
+postSearch.addEventListener("input", renderPosts);
+
+postForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    postsError.classList.add("hidden");
+    postStatus.classList.add("hidden");
+    postSubmit.disabled = true;
+    postSubmit.textContent = "Creating...";
+
+    const newPost = {
+        title: postTitle.value.trim(),
+        body: postBody.value.trim(),
+        userId: 1
+    };
+
+    try {
+        const response = await fetch(POSTS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json; charset=UTF-8" },
+            body: JSON.stringify(newPost)
+        });
+        if (!response.ok) throw new Error(`Could not create post (HTTP ${response.status}).`);
+
+        const createdPost = await response.json();
+        posts = [createdPost, ...posts];
+        postForm.reset();
+        postStatus.textContent = "Post created and added to the list.";
+        postStatus.classList.remove("hidden");
+        renderPosts();
+    } catch (error) {
+        postsError.textContent = error instanceof TypeError
+            ? "Network error while creating the post. Check your connection."
+            : error.message;
+        postsError.classList.remove("hidden");
+    } finally {
+        postSubmit.disabled = false;
+        postSubmit.textContent = "Create post";
+    }
+});
+
+fetchPosts();

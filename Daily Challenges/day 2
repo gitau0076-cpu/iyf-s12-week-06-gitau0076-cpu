@@ -1,0 +1,40 @@
+function randomDelay() {
+    return Math.floor(Math.random() * 2000) + 500;
+}
+
+function firstTask() {
+    return new Promise(resolve => {
+        const delay = randomDelay();
+        setTimeout(() => {
+            console.log(`First task finished after ${delay} ms`);
+            resolve();
+        }, delay);
+    });
+}
+
+function secondTask() {
+    return new Promise(resolve => {
+        const delay = randomDelay();
+        setTimeout(() => {
+            console.log(`Second task finished after ${delay} ms`);
+            resolve();
+        }, delay);
+    });
+}
+
+function thirdTask() {
+    return new Promise(resolve => {
+        const delay = randomDelay();
+        setTimeout(() => {
+            console.log(`Third task finished after ${delay} ms`);
+            resolve();
+        }, delay);
+    });
+}
+
+console.time("Total execution time");
+
+firstTask()
+    .then(() => secondTask())
+    .then(() => thirdTask())
+    .then(() => console.timeEnd("Total execution time"));

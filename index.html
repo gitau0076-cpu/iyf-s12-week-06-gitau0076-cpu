@@ -65,6 +65,27 @@
             <h3>Recent Searches</h3>
             <ul id="search-history"></ul>
         </div>
+
+        <section class="api-explorer" aria-labelledby="api-explorer-title">
+            <h2 id="api-explorer-title">Posts API</h2>
+            <p>Fetch posts, filter the results, or add a post with a POST request.</p>
+
+            <label for="post-search">Search posts</label>
+            <input id="post-search" type="search" placeholder="Filter by title or text">
+
+            <form id="post-form">
+                <label for="post-title">New post title</label>
+                <input id="post-title" type="text" maxlength="100" required>
+                <label for="post-body">Post text</label>
+                <textarea id="post-body" rows="3" required></textarea>
+                <button id="post-submit" type="submit">Create post</button>
+            </form>
+
+            <p id="posts-loading" class="hidden" role="status">Loading posts...</p>
+            <p id="posts-error" class="hidden error" role="alert"></p>
+            <p id="post-status" class="hidden" role="status"></p>
+            <div id="posts-list" class="posts-list" aria-live="polite"></div>
+        </section>
     </main>
     
     <script src="config.js"></script>   <!-- defines API_KEY; git-ignored -->
