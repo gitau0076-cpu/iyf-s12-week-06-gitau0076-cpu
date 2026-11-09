@@ -4,30 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weather Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <main class="weather-app">
+    <main class="container">
         <h1>Weather Dashboard</h1>
-
+        
         <form id="search-form">
-            <label for="city-input" class="visually-hidden">City</label>
-            <input type="text" id="city-input" placeholder="Enter city name..." required>
+            <input 
+                type="search" 
+                id="city-input" 
+                placeholder="Enter city name..."
+                required
+            >
             <button type="submit">Search</button>
+            <button type="button" id="location-button" aria-label="Use my current location">&#x1F4CD;</button>
         </form>
-
-        <div id="loading" class="hidden" role="status">Loading...</div>
-
-        <div id="error" class="hidden error" role="alert"></div>
-
-        <section id="weather-display" class="hidden" aria-live="polite">
+        <button type="button" id="unit-toggle" class="unit-toggle">Switch to &deg;F</button>
+        
+        <div id="loading" class="hidden">
+            Loading...
+        </div>
+        
+        <div id="error" class="hidden error">
+        </div>
+        
+        <div id="weather-display" class="hidden">
             <div class="weather-main">
                 <h2 id="city-name"></h2>
-                <img id="weather-icon" src="" alt="">
+                <img id="weather-icon" src="" alt="Weather icon">
                 <p id="temperature"></p>
                 <p id="description"></p>
             </div>
-
+            <section class="forecast-wrap" aria-labelledby="forecast-title">
+                <h3 id="forecast-title">5-day forecast</h3>
+                <div id="forecast" class="forecast hidden"></div>
+            </section>
+            
             <div class="weather-details">
                 <div class="detail">
                     <span>Feels Like</span>
@@ -46,14 +59,14 @@
                     <span id="pressure"></span>
                 </div>
             </div>
-        </section>
-
-        <section id="recent-searches">
+        </div>
+        
+        <div id="recent-searches">
             <h3>Recent Searches</h3>
             <ul id="search-history"></ul>
-        </section>
+        </div>
     </main>
-
+    
     <script src="config.js"></script>   <!-- defines API_KEY; git-ignored -->
     <script src="app.js"></script>
 </body>

@@ -1,25 +1,12 @@
-// ============================================
-// LESSON 12 — CLASSWORK EXERCISE: Weather Dashboard (Week 6 deliverable + graded gate)
-// GIVEN: index.html, styles.css, .gitignore, config.example.js, .github/workflows/deploy.yml
-// YOU WRITE: this file.  Everything goes at the ROOT of iyf-s12-week-06-{username}.
-//
-// STEP 0 — THE KEY, BEFORE ANY COMMIT (do this first, with the class):
-//   1. copy config.example.js → config.js, paste your OpenWeatherMap key in config.js
-//   2. git status  →  config.js must NOT be listed (the .gitignore hides it)
-//   3. NEVER type the key in this file. API_KEY already exists: config.js defines it.
-//   Season 11: 31 of 34 repos leaked a key. A key in git history stays forever (-5).
-// ============================================
+// API_KEY is supplied by config.js (kept out of version control).
+const API_ROOT = "https://api.openweathermap.org/data/2.5";
 
-const BASE_URL = "https://api.openweathermap.org/data/2.5/weather";
-const MAX_RECENT = 5;
-
-// ---------- DOM elements (given) ----------
 const form = document.getElementById("search-form");
 const cityInput = document.getElementById("city-input");
 const loading = document.getElementById("loading");
-const errorBox = document.getElementById("error");
+const error = document.getElementById("error");
 const weatherDisplay = document.getElementById("weather-display");
-const historyList = document.getElementById("search-history");
+const forecastDisplay = document.getElementById("forecast");
 
 const cityName = document.getElementById("city-name");
 const weatherIcon = document.getElementById("weather-icon");
@@ -30,166 +17,168 @@ const humidity = document.getElementById("humidity");
 const wind = document.getElementById("wind");
 const pressure = document.getElementById("pressure");
 
-
-// ============================================
-// STEP 1 — fetchWeather(city): fetch, check response.ok, return the JSON
-//   - URL: `${BASE_URL}?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`
-//   - if (!response.ok):  404 → throw new Error("City not found")
-//                         401 → throw new Error("API key not valid yet …")
-//                         else → throw new Error("Failed to fetch weather data")
-//   WHY: fetch does NOT reject on 404. It only rejects when there's no network.
-// ============================================
-async function fetchWeather(city) {
-  const url = `${BASE_URL}?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`;
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error("City not found");
+async function request(endpoint, params) {
+    if (typeof API_KEY === "undefined" || !API_KEY) {
+        throw new Error("Add your OpenWeather API key to config.js.");
     }
-    if (response.status === 401) {
-      throw new Error("API key not valid yet — check your key and try again later");
-    }
-    throw new Error("Failed to fetch weather data");
-  }
 
-  return response.json();
+    const query = new URLSearchParams({ ...params, appid: API_KEY, units: "metric" });
+    const response = await fetch(`${API_ROOT}/${endpoint}?${query}`);
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        if (response.status === 404) throw new Error("City not found. Check the spelling and try again.");
+        if (response.status === 401) throw new Error("API key is invalid or not active yet.");
+        throw new Error(data.message || "Could not fetch weather data.");
+    }
+
+    return data;
 }
 
-
-// ============================================
-// STEP 2 — getWeather(city): the three states
-//   - if API_KEY is missing (typeof API_KEY === "undefined" || !API_KEY):
-//       showError("Missing API key: copy config.example.js to config.js …") and return
-//   - showLoading(); hideError();
-//   - try    { const data = await fetchWeather(city); displayWeather(data); saveToHistory(data.name); }
-//   - catch  { showError(err.name === "TypeError" ? "Network error — check your connection" : err.message); }
-//   - finally{ hideLoading(); }   ← runs whether it worked or not
-// ============================================
 async function getWeather(city) {
-  if (typeof API_KEY === "undefined" || !API_KEY) {
-    showError("Missing API key: copy config.example.js to config.js and add your key");
-    return;
-  }
+    loading.classList.remove("hidden");
+    error.classList.add("hidden");
+    weatherDisplay.classList.add("hidden");
+    forecastDisplay.classList.add("hidden");
 
-  showLoading();
-  hideError();
+    try {
+        const params = { q: city };
+        const data = await request("weather", params);
+        displayWeather(data);
+        saveToHistory(data.name);
 
-  try {
-    const data = await fetchWeather(city);
-    displayWeather(data);
-    saveToHistory(data.name);
-  } catch (err) {
-    showError(err.name === "TypeError" ? "Network error — check your connection" : err.message);
-  } finally {
-    hideLoading();
-  }
+        try {
+            const forecastData = await request("forecast", params);
+            displayForecast(forecastData);
+        } catch (forecastError) {
+            const reason = forecastError instanceof TypeError
+                ? "Network error. Check your connection and try again."
+                : forecastError.message;
+            const message = document.createElement("p");
+            message.className = "forecast-message";
+            message.textContent = `Forecast unavailable: ${reason}`;
+            forecastDisplay.replaceChildren(message);
+            forecastDisplay.classList.remove("hidden");
+        }
+    } catch (requestError) {
+        error.textContent = requestError instanceof TypeError
+            ? "Network error. Check your connection and try again."
+            : requestError.message;
+        error.classList.remove("hidden");
+    } finally {
+        loading.classList.add("hidden");
+    }
 }
 
-
-// ============================================
-// STEP 3 — displayWeather(data): fill all EIGHT fields with textContent
-//   city "Nairobi, KE" (data.name, data.sys.country) · icon src + alt
-//   temperature "23°C" (Math.round) · description · feels like · humidity "60%"
-//   wind "4.12 m/s" · pressure "1018 hPa"
-//   then remove "hidden" from weatherDisplay
-//   Tip: console.log(data) first and read the shape.
-// ============================================
 function displayWeather(data) {
-  cityName.textContent = `${data.name}, ${data.sys.country}`;
-  weatherIcon.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
-  weatherIcon.alt = data.weather[0].description;
-  temperature.textContent = `${Math.round(data.main.temp)}°C`;
-  description.textContent = data.weather[0].description;
-  feelsLike.textContent = `Feels like ${Math.round(data.main.feels_like)}°C`;
-  humidity.textContent = `${data.main.humidity}%`;
-  wind.textContent = `${data.wind.speed} m/s`;
-  pressure.textContent = `${data.main.pressure} hPa`;
-  weatherDisplay.classList.remove("hidden");
+    const condition = data.weather[0];
+    cityName.textContent = `${data.name}, ${data.sys.country}`;
+    weatherIcon.src = `https://openweathermap.org/img/wn/${condition.icon}@2x.png`;
+    weatherIcon.alt = condition.description;
+    temperature.textContent = `${Math.round(data.main.temp)}°C`;
+    description.textContent = condition.description;
+    feelsLike.textContent = `${Math.round(data.main.feels_like)}°C`;
+    humidity.textContent = `${data.main.humidity}%`;
+    wind.textContent = `${data.wind.speed} m/s`;
+    pressure.textContent = `${data.main.pressure} hPa`;
+    document.body.dataset.weather = condition.main.toLowerCase();
+    weatherDisplay.classList.remove("hidden");
 }
 
-// Helpers (given)
-function showLoading() { loading.classList.remove("hidden"); weatherDisplay.classList.add("hidden"); }
-function hideLoading() { loading.classList.add("hidden"); }
-function showError(message) { errorBox.textContent = message; errorBox.classList.remove("hidden"); }
-function hideError() { errorBox.classList.add("hidden"); }
+function displayForecast(data) {
+    if (!Array.isArray(data.list) || data.list.length === 0) {
+        throw new Error("The weather service returned no forecast entries for this location.");
+    }
 
+    // API timestamps are UTC. Group by the city's local date and select the
+    // available reading nearest to local noon so every forecast day is shown.
+    const timezoneOffset = (data.city?.timezone || 0) * 1000;
+    const grouped = new Map();
 
-// ============================================
-// STEP 4 — recent searches in localStorage (a preview of Week 7)
-//   loadRecent(): JSON.parse(localStorage.getItem("recent")) || []   — wrap in try/catch
-//   saveToHistory(city): put city first, remove any duplicate (ignore case),
-//                        keep 5, localStorage.setItem("recent", JSON.stringify(recent)), renderHistory()
-//   renderHistory(): one <li><button class="history-item">city</button></li> per city (textContent)
-// ============================================
-function loadRecent() {
-  try {
-    const saved = JSON.parse(localStorage.getItem("recent"));
-    return Array.isArray(saved) ? saved : [];
-  } catch {
-    return [];
-  }
+    for (const item of data.list) {
+        const localTime = new Date(item.dt * 1000 + timezoneOffset);
+        const dateKey = localTime.toISOString().slice(0, 10);
+        const hour = localTime.getUTCHours() + localTime.getUTCMinutes() / 60;
+        const distanceToNoon = Math.abs(hour - 12);
+        const previous = grouped.get(dateKey);
+
+        if (!previous || distanceToNoon < previous.distanceToNoon) {
+            grouped.set(dateKey, { item, distanceToNoon });
+        }
+    }
+
+    const forecastDays = [...grouped.entries()].slice(0, 5);
+    forecastDisplay.replaceChildren();
+
+    for (const [dateKey, entry] of forecastDays) {
+        const day = entry.item;
+        const condition = day.weather[0];
+        const date = new Date(`${dateKey}T12:00:00Z`).toLocaleDateString(undefined, {
+            weekday: "short",
+            timeZone: "UTC"
+        });
+
+        const card = document.createElement("article");
+        card.className = "forecast-day";
+
+        const dayName = document.createElement("strong");
+        dayName.textContent = date;
+
+        const icon = document.createElement("img");
+        icon.src = `https://openweathermap.org/img/wn/${condition.icon}.png`;
+        icon.alt = condition.description;
+
+        const temp = document.createElement("span");
+        temp.textContent = `${Math.round(day.main.temp)}°C`;
+
+        const summary = document.createElement("small");
+        summary.textContent = condition.description;
+
+        card.append(dayName, icon, temp, summary);
+        forecastDisplay.append(card);
+    }
+
+    forecastDisplay.classList.remove("hidden");
 }
+
 function saveToHistory(city) {
-  recent = [city, ...recent.filter(item => item.toLowerCase() !== city.toLowerCase())]
-    .slice(0, MAX_RECENT);
-  localStorage.setItem("recent", JSON.stringify(recent));
-  renderHistory();
+    const previous = JSON.parse(localStorage.getItem("recent")) || [];
+    const recent = [
+        city,
+        ...previous.filter(item => item.toLowerCase() !== city.toLowerCase())
+    ].slice(0, 5);
+
+    localStorage.setItem("recent", JSON.stringify(recent));
+    renderHistory(recent);
 }
-function renderHistory() {
-  historyList.textContent = "";
 
-  recent.forEach(city => {
-    const item = document.createElement("li");
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "history-item";
-    button.textContent = city;
-    item.appendChild(button);
-    historyList.appendChild(item);
-  });
+function loadHistory() {
+    const recent = JSON.parse(localStorage.getItem("recent")) || [];
+    renderHistory(recent);
 }
-let recent = loadRecent();
 
+function renderHistory(recent) {
+    const historyList = document.getElementById("search-history");
+    historyList.replaceChildren();
 
-// ============================================
-// STEP 5 — events
-//   - submit on the form: preventDefault, trim, getWeather(city)
-//   - ONE click listener on historyList (delegation, Week 5):
-//       const btn = event.target.closest(".history-item"); if (btn) getWeather(btn.textContent);
-// ============================================
+    for (const city of recent) {
+        const item = document.createElement("li");
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = city;
+        button.addEventListener("click", () => {
+            cityInput.value = city;
+            getWeather(city);
+        });
+        item.append(button);
+        historyList.append(item);
+    }
+}
 
 form.addEventListener("submit", event => {
-  event.preventDefault();
-  const city = cityInput.value.trim();
-  if (city) {
-    getWeather(city);
-  }
+    event.preventDefault();
+    const city = cityInput.value.trim();
+    if (city) getWeather(city);
 });
 
-historyList.addEventListener("click", event => {
-  const btn = event.target.closest(".history-item");
-  if (btn) {
-    getWeather(btn.textContent);
-  }
-});
-
-
-renderHistory();
-
-
-// ============================================
-// STEP 6 — DEPLOY (the graded gate) — see the task file, "Deploy — the graded gate"
-//   1. Settings → Secrets and variables → Actions → New repository secret
-//        Name: OPENWEATHER_API_KEY    Value: your key
-//   2. Settings → Pages → Source: GitHub Actions
-//   3. .github/workflows/deploy.yml is already here — commit it and push
-//   4. Actions tab → green tick → open the URL
-//   CHECK:  git log -p | grep -i appid   → only ${API_KEY}, never a real key
-//
-// COMMITS as you go:
-//   git commit -m "Add: weather fetch with response.ok check"
-//   git commit -m "Add: loading, error and success states"
-//   git commit -m "Add: recent searches in localStorage"
-//   git commit -m "Add: GitHub Pages deploy workflow"
-// ============================================
+loadHistory();
