@@ -7,40 +7,68 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Weather Checker</h1>
+    <main class="container">
+        <h1>Weather Dashboard</h1>
         
-        <div class="search-box">
-            <!-- Coordinates for popular testing locations -->
-            <select id="city-selector">
-                <option value="-1.2921,36.8219">Nairobi, Kenya</option>
-                <option value="40.7128,-74.0060">New York, USA</option>
-                <option value="51.5074,-0.1278">London, UK</option>
-                <option value="-33.8688,151.2093">Sydney, Australia</option>
-                <option value="35.6762,139.6503">Tokyo, Japan</option>
-            </select>
-            <button id="fetch-btn">Get Weather</button>
+        <form id="search-form">
+            <input 
+                type="search" 
+                id="city-input" 
+                placeholder="Enter city name..."
+                required
+            >
+            <button type="submit">Search</button>
+            <button type="button" id="location-button" aria-label="Use my current location">&#x1F4CD;</button>
+        </form>
+        <button type="button" id="unit-toggle" class="unit-toggle">Switch to &deg;F</button>
+        
+        <div id="loading" class="hidden">
+            Loading...
+        </div>
+        
+        <div id="error" class="hidden error">
+        </div>
+        
+        <div id="weather-display" class="hidden">
+            <div class="weather-main">
+                <h2 id="city-name"></h2>
+                <img id="weather-icon" src="" alt="Weather icon">
+                <p id="temperature"></p>
+                <p id="description"></p>
+            </div>
+            <section class="forecast-wrap" aria-labelledby="forecast-title">
+                <h3 id="forecast-title">5-day forecast</h3>
+                <div id="forecast" class="forecast hidden"></div>
+            </section>
+            
+            <div class="weather-details">
+                <div class="detail">
+                    <span>Feels Like</span>
+                    <span id="feels-like"></span>
+                </div>
+                <div class="detail">
+                    <span>Humidity</span>
+                    <span id="humidity"></span>
+                </div>
+                <div class="detail">
+                    <span>Wind</span>
+                    <span id="wind"></span>
+                </div>
+                <div class="detail">
+                    <span>Pressure</span>
+                    <span id="pressure"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="recent-searches">
+            <h3>Recent Searches</h3>
+            <ul id="search-history"></ul>
         </div>
 
-        <div id="weather-card" class="weather-card hidden">
-            <h2 id="location-name">City Weather</h2>
-            <div class="temp-display">
-                <span id="temperature">--</span>°C
-            </div>
-            <div class="details-grid">
-                <div class="detail-item">
-                    <span class="label">Wind Speed:</span>
-                    <span id="windspeed" class="value">--</span> km/h
-                </div>
-                <div class="detail-item">
-                    <span class="label">Humidity:</span>
-                    <span id="humidity" class="value">--</span> %
-                </div>
-            </div>
-        </div>
-        
-        <div id="error-message" class="error hidden"></div>
-    </div>
-    <script src="asycn-practice.js"></script>
+    </main>
+    
+    <script src="config.js"></script>   <!-- defines API_KEY; git-ignored -->
+    <script src="app.js"></script>
 </body>
 </html>
