@@ -42,6 +42,11 @@ const loading = document.getElementById("loading");
 const errorDiv = document.getElementById("error");
 const container = document.getElementById("users-container");
 const results = document.getElementById("results");
+const searchInput = document.getElementById("search");
+const nameSort = document.getElementById("name-sort");
+const cityFilter = document.getElementById("city-filter");
+const usersCount = document.getElementById("users-count");
+let allUsers = [];
 
 async function loadUsers() {
     try {
@@ -53,8 +58,10 @@ async function loadUsers() {
             fetchCollection("https://jsonplaceholder.typicode.com/users/1/posts")
         ]);
 
+        allUsers = users;
+        populateCityFilter(users);
         displaySingleUser(user);
-        displayUsers(users);
+        applyUserFilters();
         displayPosts(posts);
         results.hidden = false;
     } catch (error) {
@@ -69,6 +76,7 @@ function showLoading() {
     errorDiv.classList.add("hidden");
     results.hidden = true;
     container.replaceChildren();
+    document.getElementById("posts-list").replaceChildren();
 }
 
 function hideLoading() {
@@ -138,9 +146,6 @@ function displayPosts(posts) {
     list.replaceChildren(...items);
 }
 
-// Initialize
-loadUsers();
-
 // Task 12.3: Post Request
 
 // Exercise: Creating Resources
@@ -202,22 +207,39 @@ postForm.addEventListener("submit", async event => {
     }
 });
 
-// Task 12.4: Search & Filter
-// Exercise: Live Search
-let allUsers = [];
+// Task 12.4: Search and filter the users already fetched by loadUsers.
+function populateCityFilter(users) {
+    const cities = [...new Set(users.map(user => user.address.city))]
+        .sort((a, b) => a.localeCompare(b));
 
-async function init() {
-    allUsers = await fetchUsers();
-    displayUsers(allUsers);
-    
-    // Set up search
-    const searchInput = document.getElementById("search");
-    searchInput.addEventListener("input", (e) => {
-        const query = e.target.value.toLowerCase();
-        const filtered = allUsers.filter(user => 
-            user.name.toLowerCase().includes(query) ||
-            user.email.toLowerCase().includes(query)
-        );
-        displayUsers(filtered);
-    });
+    for (const city of cities) {
+        const option = document.createElement("option");
+        option.value = city;
+        option.textContent = city;
+        cityFilter.append(option);
+    }
 }
+
+function applyUserFilters() {
+    const query = searchInput.value.trim().toLowerCase();
+    const selectedCity = cityFilter.value;
+    const direction = nameSort.value === "desc" ? -1 : 1;
+
+    const filteredUsers = allUsers
+        .filter(user => {
+            const matchesSearch = `${user.name} ${user.email}`.toLowerCase().includes(query);
+            const matchesCity = !selectedCity || user.address.city === selectedCity;
+            return matchesSearch && matchesCity;
+        })
+        .sort((a, b) => direction * a.name.localeCompare(b.name));
+
+    displayUsers(filteredUsers);
+    usersCount.textContent = `Showing ${filteredUsers.length} of ${allUsers.length} users`;
+}
+
+searchInput.addEventListener("input", applyUserFilters);
+nameSort.addEventListener("change", applyUserFilters);
+cityFilter.addEventListener("change", applyUserFilters);
+
+// Initialize the Lesson 12 API examples.
+loadUsers();

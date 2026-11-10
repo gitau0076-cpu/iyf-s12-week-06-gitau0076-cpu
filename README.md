@@ -2,7 +2,7 @@
 
 ## Project description
 
-A browser-based weather dashboard built with HTML, CSS, and JavaScript. Search for a city to see current conditions and a five-day forecast. The app also supports recent searches, Celsius/Fahrenheit switching, and weather by geolocation. A Posts API section demonstrates loading data, filtering it, and sending a POST request.
+A browser-based weather dashboard built with HTML, CSS, and JavaScript. Search for a city to see current conditions and a five-day forecast. The dashboard also supports recent searches, Celsius/Fahrenheit switching, and weather by geolocation. Fetch API, POST, and search/filter exercises are in `Lesson 12/dom.html`.
 
 ## Live demo
 [Live page](https://gitau0076-cpu.github.io/iyf-s12-week-06-gitau0076-cpu/)
@@ -44,6 +44,8 @@ iyf-s12-week-06-gitau0076-cpu/
 3. Open `index.html` in a browser, or run a local static server from this folder.
 
 `config.js` is excluded by `.gitignore`. Never commit your real API key.
+
+To open the Lesson 12 Fetch API exercises, serve the project folder and visit `Lesson 12/dom.html`.
 
 ## GitHub Pages Deployment
 This repository deploys with GitHub Actions. In the repository settings:
